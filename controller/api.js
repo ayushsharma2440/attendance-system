@@ -1,10 +1,16 @@
 const express = require("express");
 const { getconnection } = require("../connection");
+const { signin } = require("./auth");
+const verifyauth = require("../middleware/middleware");
 
 const router = express.Router();
 
 router.get("/",(req,res)=>{
     res.render("home");
+})
+
+router.get("/attendance",verifyauth,(req,res)=>{
+    res.send("Mark your attendance");
 })
 
 router.get("/face",(req,res)=>{
@@ -17,8 +23,21 @@ router.get("/login",(req,res)=>{
 })
 
 router.post("/login",(req,res)=>{
-    console.log(req.body);
-    return res.send("LOGGED IN");
+    const sql = getconnection();
+    const {email,password}  = req.body;
+    sql.query(`Select * from USER where email="${email}" AND password="${password}"`,(err,result)=>{
+        if (err) throw err;
+        if (result.length === 0){
+            res.send("NO USER exists");
+        }
+        else
+        {
+            user = result[0];
+            const token = signin(user.id,email);
+            res.cookie("jwt",token);
+            res.redirect("/attendance");
+        }
+    })
 })
 
 router.get("/signup",(req,res)=>{
