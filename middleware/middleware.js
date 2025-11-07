@@ -3,6 +3,9 @@ const { verifytoken } = require("../controller/auth");
 
 function verifyauth(req,res,next){
 const token = req.cookies.jwt;
+if (!token){
+    res.redirect("/login");
+}
 try {
     const user = verifytoken(token)
     if (user){

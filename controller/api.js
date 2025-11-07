@@ -6,11 +6,11 @@ const verifyauth = require("../middleware/middleware");
 const router = express.Router();
 
 router.get("/",(req,res)=>{
-    res.render("home");
+    res.send("Homepage");
 })
 
 router.get("/attendance",verifyauth,(req,res)=>{
-    res.send("Mark your attendance");
+    res.render("home");
 })
 
 router.get("/face",(req,res)=>{
@@ -41,7 +41,6 @@ router.post("/login",(req,res)=>{
 })
 
 router.get("/signup",(req,res)=>{
-    console.log(req.body);
     res.render("signup");
 })
 
