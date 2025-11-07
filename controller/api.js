@@ -9,13 +9,22 @@ router.get("/",(req,res)=>{
     res.send("Homepage");
 })
 
-router.get("/attendance",verifyauth,(req,res)=>{
+router.get("/markattendance",verifyauth,(req,res)=>{
     res.render("home");
+})
+
+router.get("/myattendance",verifyauth,(req,res)=>{
+    res.send("All Attendances");
 })
 
 router.get("/face",(req,res)=>{
     res.render("face-attendance-example");
 })
+
+router.get("/admin",(req,res)=>{
+    res.render("admin");
+})
+
 
 
 router.get("/login",(req,res)=>{
@@ -35,7 +44,10 @@ router.post("/login",(req,res)=>{
             user = result[0];
             const token = signin(user.id,email);
             res.cookie("jwt",token);
-            res.redirect("/attendance");
+            if (user.role=='admin'){
+                return res.redirect("/admin");
+            }
+           return res.redirect("/myattendance");
         }
     })
 })

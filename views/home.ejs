@@ -3,47 +3,422 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Attendance System - Face Recognition</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
     <style>
-        #map { height: 500px;width: 500px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .step {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .step.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #map { 
+            height: 400px;
+            width: 100%; 
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .face-recognition-container {
+            text-align: center;
+        }
+        #video {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 20px auto;
+            display: block;
+            background: #000;
+        }
+        #canvas {
+            display: none;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .status-message {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
-    <h1>Attendance System</h1>
+    <div class="container">
+        <h1>🎯 Attendance System</h1>
 
+        <!-- Step 1: Location & Button -->
+        <div id="step1" class="step active">
+            <div class="step-header">
+                <h2>📍 Your Location</h2>
+            </div>
+            <div id="map"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="verifyBtn" onclick="verifyPhysicalPresence()">
+                    Verify Physical Presence
+                </button>
+            </div>
+        </div>
 
+        <!-- Step 2: Face Recognition -->
+        <div id="step2" class="step">
+            <div class="step-header">
+                <h2>👤 Face Verification</h2>
+            </div>
+            <div class="face-recognition-container">
+                <div class="info-box">
+                    <p>📸 Please position your face in the center of the camera</p>
+                    <p>Ensure good lighting for better recognition</p>
+                </div>
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+                <div id="faceStatus"></div>
+                <div>
+                    <button onclick="cancelVerification()" style="background: #6c757d;">Cancel</button>
+                </div>
+            </div>
+        </div>
 
-<div id="map"></div>
-
-
-
+        <!-- Step 3: Confirmation -->
+        <div id="step3" class="step">
+            <div class="step-header">
+                <h2>✅ Attendance Marked Successfully!</h2>
+            </div>
+            <div id="confirmationDetails" class="status-message status-success">
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="location.reload()">Mark Another Attendance</button>
+            </div>
+        </div>
+    </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin="">
-</script>
+     crossorigin=""></script>
 
 <script>
-    navigator.geolocation.getCurrentPosition((pos)=>{
-        console.log(latt=pos.coords.latitude);
-        fetch(`http://localhost:8000/api/location`,{
-            method:"POST",
-            headers: {"Content-Type": "application/json"},
-            body:JSON.stringify({
-                lat:pos.coords.latitude,
-                lon:pos.coords.longitude
-            })
-        })
-    var map = L.map('map').setView([pos.coords.latitude, pos.coords.longitude], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-    var marker = L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(map);
-    marker.bindPopup("<b>Your Location!</b>").openPopup();
-    })
+    let userCoordinates = null;
+    let videoStream = null;
+    let recognizedUserName = null;
+    let detectionInterval = null;
+    let isDetecting = false;
+
+    // Load location and show map on page load
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            userCoordinates = {
+                lat: pos.coords.latitude,
+                lon: pos.coords.longitude
+            };
+            
+            console.log('User location:', userCoordinates);
+            
+            // Initialize map
+            var map = L.map('map').setView([pos.coords.latitude, pos.coords.longitude], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            var marker = L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(map);
+            marker.bindPopup("<b>Your Location!</b>").openPopup();
+        },
+        (error) => {
+            alert('Location access denied. Please enable location services.');
+            console.error('Geolocation error:', error);
+        }
+    );
+
+    // User clicks "Verify Physical Presence"
+    function verifyPhysicalPresence() {
+        if (!userCoordinates) {
+            alert('Please wait for location to load!');
+            return;
+        }
+        
+        // Hide step 1, show step 2
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step2').classList.add('active');
+        
+        // Start camera and continuous detection
+        startCamera();
+    }
+
+    // Start camera for face recognition
+    async function startCamera() {
+        const video = document.getElementById('video');
+        const faceStatus = document.getElementById('faceStatus');
+        
+        try {
+            faceStatus.innerHTML = '<div class="status-message status-info">📷 Starting camera...</div>';
+            
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: 'user'
+                },
+                audio: false
+            });
+            
+            video.srcObject = stream;
+            videoStream = stream;
+            
+            // Wait for video to be ready
+            video.onloadedmetadata = () => {
+                faceStatus.innerHTML = '<div class="status-message status-info"><div class="loader"></div>🔍 Scanning for face...</div>';
+                // Start continuous face detection
+                startContinuousDetection();
+            };
+            
+        } catch (error) {
+            console.error('Camera error:', error);
+            faceStatus.innerHTML = '<div class="status-message status-error">❌ Failed to access camera. Please check permissions.</div>';
+        }
+    }
+
+    // Continuous face detection
+    function startContinuousDetection() {
+        if (isDetecting) return;
+        isDetecting = true;
+        
+        detectionInterval = setInterval(() => {
+            detectAndVerifyFace();
+        }, 2000); // Check every 2 seconds
+    }
+
+    // Stop continuous detection
+    function stopDetection() {
+        if (detectionInterval) {
+            clearInterval(detectionInterval);
+            detectionInterval = null;
+        }
+        isDetecting = false;
+    }
+
+    // Cancel verification and go back
+    function cancelVerification() {
+        stopDetection();
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+        document.getElementById('step2').classList.remove('active');
+        document.getElementById('step1').classList.add('active');
+    }
+
+    // Detect and verify face automatically
+    async function detectAndVerifyFace() {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const faceStatus = document.getElementById('faceStatus');
+        
+        // Check if video is ready
+        if (!video.videoWidth || !video.videoHeight) {
+            return;
+        }
+        
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw current video frame to canvas
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Show processing status
+        faceStatus.innerHTML = '<div class="status-message status-info"><div class="loader"></div>Verifying face detected...</div>';
+        
+        // Convert canvas to blob
+        canvas.toBlob(async (blob) => {
+            try {
+                // Create form data
+                const formData = new FormData();
+                formData.append('image', blob, 'face.jpg');
+                
+                // Send to backend for verification
+                const response = await fetch('http://localhost:8000/api/verify-face', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.recognized) {
+                    // Face recognized successfully - stop detection
+                    stopDetection();
+                    
+                    faceStatus.innerHTML = `<div class="status-message status-success">
+                        ✅ Face verified! Welcome, ${result.name}!<br>
+                        Confidence: ${result.confidence}%
+                    </div>`;
+                    
+                    // Stop camera
+                    if (videoStream) {
+                        videoStream.getTracks().forEach(track => track.stop());
+                    }
+                    
+                    // Save recognized user info
+                    recognizedUserName = result.name;
+                    
+                    // Mark attendance by sending to /location
+                    setTimeout(() => markAttendance(result.name, result.confidence), 1500);
+                    
+                } else {
+                    // Face not recognized - continue scanning
+                    faceStatus.innerHTML = '<div class="status-message status-info"><div class="loader"></div>🔍 Scanning for face...</div>';
+                }
+                
+            } catch (error) {
+                console.error('Face verification error:', error);
+                // Continue scanning on error
+                faceStatus.innerHTML = '<div class="status-message status-info"><div class="loader"></div>🔍 Scanning for face...</div>';
+            }
+        }, 'image/jpeg', 0.95);
+    }
+
+    // Mark attendance after successful face verification
+    async function markAttendance(name, confidence) {
+        try {
+            // Send POST to /location endpoint
+            const response = await fetch('http://localhost:8000/api/location', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    lat: userCoordinates.lat,
+                    lon: userCoordinates.lon,
+                    name: name,
+                    confidence: confidence,
+                    timestamp: new Date().toISOString()
+                })
+            });
+            
+            const result = await response.json();
+            
+            // Show success screen
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step3').classList.add('active');
+            
+            const confirmationDetails = document.getElementById('confirmationDetails');
+            confirmationDetails.innerHTML = `
+                <h2 style="margin-bottom: 15px;">🎉 Attendance Marked!</h2>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Confidence:</strong> ${confidence}%</p>
+                <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+                <p><strong>Location:</strong> ${userCoordinates.lat.toFixed(6)}, ${userCoordinates.lon.toFixed(6)}</p>
+            `;
+            
+        } catch (error) {
+            console.error('Attendance marking error:', error);
+            alert('Failed to mark attendance. Please try again.');
+        }
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+    });
 </script>
 
 </body>

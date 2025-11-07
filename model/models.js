@@ -13,7 +13,7 @@ const createtable = (sql)=>{
       email VARCHAR(100),
       password VARCHAR(50),
       has_attended BOOLEAN DEFAULT FALSE,
-      role ENUM('admin', 'teacher', 'student') DEFAULT 'student'
+      role ENUM('admin', 'student') DEFAULT 'student'
     )
   `, (err) => {
     if (err) throw err;

@@ -1,15 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOGIN</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Management System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      background-color: #f8f5f4;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      width: 90%;
+      max-width: 900px;
+      height: 80vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      animation: fadeIn 1s ease;
+    }
+
+    .left {
+      flex: 1;
+      background-color: #fdfaf8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      padding: 30px;
+      animation: slideUp 1.2s ease;
+    }
+
+    .login-form {
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .login-form label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .login-form input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: none;
+      border-bottom: 2px solid #aaa;
+      border-radius: 8px;
+      background-color: #eaeaea;
+      transition: all 0.3s ease;
+      font-size: 15px;
+    }
+
+    .login-form input:focus {
+      background-color: #fff;
+      border-color: #5e4bff;
+      outline: none;
+      transform: scale(1.02);
+      box-shadow: 0 0 8px rgba(94, 75, 255, 0.3);
+    }
+
+    .login-form button {
+      width: 100%;
+      padding: 12px;
+      background-color: #2f2931;
+      color: #fff;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .login-form button:hover {
+      background-color: #4a3e55;
+      transform: scale(1.05);
+    }
+
+    .admin-link {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 20px;
+      color: #444;
+      animation: fadeIn 1.5s ease;
+    }
+
+    .admin-link a {
+      color: #2979ff;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .admin-link a:hover {
+      text-decoration: underline;
+    }
+
+    .right {
+      flex: 1;
+      background-color: #2f2931;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      animation: slideRight 1.2s ease;
+    }
+
+    .right h1 {
+      font-size: 1.8rem;
+      line-height: 1.4;
+      animation: fadeInUp 1.5s ease;
+    }
+
+    /* ===== Animations ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideRight {
+      from { transform: translateX(30px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ===== Mobile Responsiveness ===== */
+    @media (max-width: 768px) {
+      body {
+        background-color: #2f2931;
+      }
+
+      .container {
+        flex-direction: column-reverse;
+        width: 95%;
+        height: auto;
+        box-shadow: none;
+        background: transparent;
+      }
+
+      .right {
+        background: transparent;
+        padding: 10px 0;
+      }
+
+      .right h1 {
+        font-size: 1.5rem;
+        color: #fff;
+      }
+
+      .left {
+        width: 100%;
+        background-color: #fff;
+        border-radius: 20px 20px 0 0;
+        padding: 40px 20px;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .login-form button {
+        background-color: #5e4bff;
+      }
+
+      .admin-link {
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <form action="/login" method="post">
-        <input type="text" name="email" placeholder="example@jklu.edu.in">
-        <input type="text" name="password" placeholder="Password">
+  <div class="container">
+    <div class="left">
+      <form class="login-form" method="post" action="/login">
+        <label for="subject">Email</label>
+        <input type="text" id="subject" name="email" placeholder="JKLU Email ID" required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Password" required>
+
         <button type="submit">Login</button>
-    </form>
+
+        <p class="admin-link">
+          <a href="#">Admin?</a><br>
+          If you are not user you are not welcome.
+        </p>
+      </form>
+    </div>
+
+    <div class="right">
+      <h1>Attendance<br>Management System</h1>
+    </div>
+  </div>
 </body>
 </html>

@@ -20,11 +20,11 @@ app.set("views","views");
 app.set("view engine", "ejs");
 
 // Initialize face recognition
-// faceRecognition.initialize().then(() => {
-//   console.log("✓ Face recognition initialized");
-// }).catch(err => {
-//   console.error("✗ Face recognition initialization failed:", err.message);
-// });
+faceRecognition.initialize().then(() => {
+  console.log("✓ Face recognition initialized");
+}).catch(err => {
+  console.error("✗ Face recognition initialization failed:", err.message);
+});
 
 // /api route = controller/user.js 
 app.use("/",router);
@@ -33,5 +33,5 @@ app.use("/api",faceAttendanceRoutes);
 
 
 app.listen(8000, () => {
-  console.log("🚀 Server Started on http://localhost:8000");
+  console.log("Server Started on http://localhost:8000");
 });
