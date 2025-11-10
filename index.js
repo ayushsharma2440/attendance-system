@@ -6,6 +6,7 @@ const apirouter = require("./controller/user");
 const cookieparser = require("cookie-parser");
 const faceRecognition = require("./faceRecognition");
 const faceAttendanceRoutes = require("./routes/faceAttendance");
+const attendanceRoutes = require("./routes/attendance");
 
 const app = express();
 
@@ -30,6 +31,7 @@ faceRecognition.initialize().then(() => {
 app.use("/",router);
 app.use("/api",apirouter);
 app.use("/api",faceAttendanceRoutes);
+app.use("/api/attendance", attendanceRoutes);
 
 
 app.listen(8000, () => {

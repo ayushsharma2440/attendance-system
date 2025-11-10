@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance System - Face Recognition</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
@@ -14,24 +15,25 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f5f4;
             min-height: 100vh;
             padding: 20px;
         }
         .container {
             max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin: 2rem auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
         h1 {
             text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5em;
+            color: #2f2931;
+            margin-bottom: 2rem;
+            font-size: 2.2em;
+            font-weight: 700;
         }
         .step {
             display: none;
@@ -45,10 +47,10 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .step-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #2f2931;
             color: white;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 8px;
             margin-bottom: 20px;
             text-align: center;
         }
@@ -76,24 +78,26 @@
             display: none;
         }
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #2f2931;
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 16px;
-            border-radius: 50px;
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s;
-            margin: 10px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+            font-weight: 500;
         }
         button:hover {
+            background-color: #4a3e55;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         button:disabled {
-            background: #ccc;
+            background-color: #9ca3af;
             cursor: not-allowed;
+            transform: none;
             box-shadow: none;
         }
         .status-message {
@@ -125,7 +129,7 @@
         }
         .loader {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid #2f2931;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -138,7 +142,7 @@
         }
         .info-box {
             background: #f8f9fa;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #2f2931;
             padding: 15px;
             margin: 20px 0;
             border-radius: 5px;
@@ -204,6 +208,9 @@
     let recognizedUserName = null;
     let detectionInterval = null;
     let isDetecting = false;
+    let isProcessing = false; // Flag to prevent multiple simultaneous face verification requests
+    let faceRecognized = false; // Flag to stop detection after face is recognized
+    let attendanceSubmitted = false; // Flag to prevent multiple attendance API calls
 
     // Load location and show map on page load
     navigator.geolocation.getCurrentPosition(
@@ -308,6 +315,12 @@
 
     // Detect and verify face automatically
     async function detectAndVerifyFace() {
+        // Prevent multiple simultaneous requests
+        if (isProcessing || faceRecognized) {
+            console.log('Skipping detection - already processing or face already recognized');
+            return;
+        }
+        
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const faceStatus = document.getElementById('faceStatus');
@@ -316,6 +329,8 @@
         if (!video.videoWidth || !video.videoHeight) {
             return;
         }
+        
+        isProcessing = true; // Set flag to prevent concurrent requests
         
         // Set canvas dimensions to match video
         canvas.width = video.videoWidth;
@@ -344,8 +359,9 @@
                 const result = await response.json();
                 
                 if (result.success && result.recognized) {
-                    // Face recognized successfully - stop detection
+                    // Face recognized successfully - stop detection IMMEDIATELY
                     stopDetection();
+                    faceRecognized = true; // Mark as recognized to prevent further processing
                     
                     faceStatus.innerHTML = `<div class="status-message status-success">
                         ✅ Face verified! Welcome, ${result.name}!<br>
@@ -365,11 +381,13 @@
                     
                 } else {
                     // Face not recognized - continue scanning
+                    isProcessing = false; // Allow next detection
                     faceStatus.innerHTML = '<div class="status-message status-info"><div class="loader"></div>🔍 Scanning for face...</div>';
                 }
                 
             } catch (error) {
                 console.error('Face verification error:', error);
+                isProcessing = false; // Allow next detection on error
                 // Continue scanning on error
                 faceStatus.innerHTML = '<div class="status-message status-info"><div class="loader"></div>🔍 Scanning for face...</div>';
             }
@@ -378,9 +396,20 @@
 
     // Mark attendance after successful face verification
     async function markAttendance(name, confidence) {
+        // Extra safeguard - prevent multiple calls
+        if (attendanceSubmitted) {
+            console.log('Attendance already submitted, skipping duplicate call');
+            return;
+        }
+        
+        attendanceSubmitted = true; // Set flag to prevent re-entry
+        
         try {
-            // Send POST to /location endpoint
+            console.log('Marking attendance for:', { name, confidence, lat: userCoordinates.lat, lon: userCoordinates.lon });
+            
+            // Send POST to /location endpoint with cookies
             const response = await fetch('http://localhost:8000/api/location', {
+                credentials: 'include', // Important: send cookies with request
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({

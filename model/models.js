@@ -21,30 +21,30 @@ const createtable = (sql)=>{
   });
 
   sql.query(`
+    CREATE TABLE IF NOT EXISTS locations (
+      location_id INT AUTO_INCREMENT PRIMARY KEY,
+      latitude DECIMAL(10, 7),
+      longitude DECIMAL(10, 7),
+      at_time DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) throw err;
+    console.log("Table locations created");
+  });
+
+  sql.query(`
     CREATE TABLE IF NOT EXISTS attendance (
       attendance_id INT AUTO_INCREMENT PRIMARY KEY,
       user_id INT,
       date DATE NOT NULL,
       at_time TIME,
-      FOREIGN KEY (user_id) REFERENCES USER(id)
+      location_id INT,
+      FOREIGN KEY (user_id) REFERENCES USER(id),
+      FOREIGN KEY (location_id) REFERENCES locations(location_id)
     )
   `, (err) => {
     if (err) throw err;
     console.log("Table attendance created");
-  });
-
-  sql.query(`
-    CREATE TABLE IF NOT EXISTS locations (
-      location_id INT AUTO_INCREMENT PRIMARY KEY,
-      latitude DECIMAL(10, 7),
-      longitude DECIMAL(10, 7),
-      at_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-      attendance_id INT,
-      FOREIGN KEY (attendance_id) REFERENCES attendance(attendance_id)
-    )
-  `, (err) => {
-    if (err) throw err;
-    console.log("Table locations created");
   });
 
 };

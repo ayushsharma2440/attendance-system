@@ -4,7 +4,7 @@ const { verifytoken } = require("../controller/auth");
 function verifyauth(req,res,next){
 const token = req.cookies.jwt;
 if (!token){
-    res.redirect("/login");
+    return res.redirect("/login");
 }
 try {
     const user = verifytoken(token)
@@ -12,7 +12,7 @@ try {
         next();
     }
 } catch (error) {
-    res.clearCookie("ayush");
+    res.clearCookie("jwt");
     return res.redirect("/login");
 }
 }
@@ -20,7 +20,7 @@ try {
 function vertiyadmin(req,res,next){
 const token = req.cookies.jwt;
 if (!token){
-    res.redirect("/login");
+    return res.redirect("/login");
 }
 try {
     const user = verifytoken(token)
@@ -28,10 +28,9 @@ try {
         next();
     }
 } catch (error) {
-    res.clearCookie("ayush");
+    res.clearCookie("jwt");
     return res.redirect("/login");
 }
 }
-
 
 module.exports = verifyauth

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .attendance-card {
+            transition: all 0.3s ease;
+        }
+        .attendance-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .present {
+            border-left: 4px solid #10B981;
+        }
+        .absent {
+            border-left: 4px solid #EF4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900">My Attendance</h1>
+            <div class="flex items-center space-x-4">
+                <span class="text-gray-600">Welcome, <span id="userName">User</span></span>
+                <button onclick="logout()" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                        <i class="fas fa-calendar-check text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Total Present</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalPresent">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                        <i class="fas fa-calendar-times text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Total Absent</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalAbsent">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                        <i class="fas fa-percentage text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Attendance %</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="attendancePercentage">0%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Chart -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Attendance Overview</h2>
+            <div class="h-64">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Recent Activity</h2>
+            </div>
+            <div class="divide-y divide-gray-200">
+                <!-- Attendance records will be inserted here by JavaScript -->
+                <div id="attendanceRecords" class="divide-y divide-gray-200">
+                    <!-- Records will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Fetch user data and attendance records
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Fetch user data (cookies are automatically sent)
+                const userResponse = await fetch('/api/auth/me', {
+                    credentials: 'include'
+                });
+                
+                if (!userResponse.ok) {
+                    if (userResponse.status === 401 || userResponse.status === 403) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error('Failed to fetch user data');
+                }
+                
+                const userData = await userResponse.json();
+                document.getElementById('userName').textContent = userData.name;
+
+                // Fetch attendance data (cookies are automatically sent)
+                const attendanceResponse = await fetch('/api/attendance/my', {
+                    credentials: 'include'
+                });
+                
+                if (!attendanceResponse.ok) {
+                    if (attendanceResponse.status === 401 || attendanceResponse.status === 403) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error('Failed to fetch attendance data');
+                }
+                
+                const attendanceData = await attendanceResponse.json();
+                updateAttendanceStats(attendanceData);
+                renderAttendanceRecords(attendanceData);
+                renderAttendanceChart(attendanceData);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading data. Please try again.');
+            }
+        });
+
+        function updateAttendanceStats(records) {
+            const presentCount = records.length;
+            const totalDays = 30; // Assuming a month period
+            const absentCount = totalDays - presentCount;
+            const attendancePercentage = Math.round((presentCount / totalDays) * 100);
+
+            document.getElementById('totalPresent').textContent = presentCount;
+            document.getElementById('totalAbsent').textContent = absentCount;
+            document.getElementById('attendancePercentage').textContent = `${attendancePercentage}%`;
+        }
+
+        function renderAttendanceRecords(records) {
+            const container = document.getElementById('attendanceRecords');
+            container.innerHTML = ''; // Clear existing content
+
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center text-gray-500">
+                        No attendance records found.
+                    </div>
+                `;
+                return;
+            }
+
+            records.forEach(record => {
+                const date = new Date(`${record.date}T${record.at_time}`);
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const recordElement = document.createElement('div');
+                recordElement.className = 'p-6 attendance-card flex justify-between items-center hover:bg-gray-50';
+                recordElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Attendance Marked</p>
+                            <p class="text-sm text-gray-500">${formattedDate}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                            Present
+                        </span>
+                        ${record.latitude && record.longitude ? `
+                        <button onclick="showLocation(${record.latitude}, ${record.longitude})" 
+                                class="ml-2 text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-map-marker-alt"></i> View Location
+                        </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(recordElement);
+            });
+        }
+
+        function renderAttendanceChart(records) {
+            // Group records by date
+            const recordsByDate = {};
+            records.forEach(record => {
+                const date = record.date;
+                if (!recordsByDate[date]) {
+                    recordsByDate[date] = 0;
+                }
+                recordsByDate[date]++;
+            });
+
+            // Prepare data for chart
+            const labels = Object.keys(recordsByDate).sort();
+            const data = labels.map(date => recordsByDate[date]);
+
+            // Create chart
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Attendance',
+                        data: data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showLocation(lat, lng) {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>
