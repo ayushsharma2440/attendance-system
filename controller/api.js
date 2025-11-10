@@ -2,6 +2,29 @@ const express = require("express");
 const { getconnection } = require("../connection");
 const { signin } = require("./auth");
 const verifyauth = require("../middleware/middleware");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const faceRecognition = require("../faceRecognition");
+
+// Configure multer for face image uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const imagesPath = path.join(__dirname, '../Images');
+        // Create Images directory if it doesn't exist
+        if (!fs.existsSync(imagesPath)) {
+            fs.mkdirSync(imagesPath);
+        }
+        cb(null, imagesPath);
+    },
+    filename: function (req, file, cb) {
+        // Use the user's name from the form as filename
+        const userName = req.body.name;
+        cb(null, userName + '.jpg');
+    }
+});
+
+const upload = multer({ storage: storage });
 
 const router = express.Router();
 
@@ -106,28 +129,59 @@ router.get("/signup",(req,res)=>{
     res.render("signup");
 })
 
-router.post("/signup", (req, res) => {
+router.post("/signup", upload.single('faceImage'), (req, res) => {
     const sql = getconnection();
     const { name, email, password } = req.body;
 
+    // Check if face image was uploaded
+    if (!req.file) {
+        return res.status(400).send("Please capture your face image");
+    }
+
     sql.query("SELECT COUNT(*) AS COUNT FROM User", (err, countResult) => {
-        if (err) return res.status(500).send("Database error");
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).send("Database error");
+        }
 
         const idcount = countResult[0].COUNT;
 
         sql.query("SELECT * FROM User WHERE email = ?", [email], (err, userResult) => {
-            if (err) return res.status(500).send("Database error");
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).send("Database error");
+            }
 
             if (userResult.length === 0) {
                 sql.query(
                     "INSERT INTO User (id, name, email, password) VALUES (?, ?, ?, ?)",
                     [idcount + 1, name, email, password],
                     (err) => {
-                        if (err) return res.status(500).send("Error inserting user");
+                        if (err) {
+                            console.error('Error inserting user:', err);
+                            // Delete uploaded image if user creation fails
+                            if (req.file && req.file.path) {
+                                fs.unlinkSync(req.file.path);
+                            }
+                            return res.status(500).send("Error inserting user");
+                        }
+                        console.log(`User created: ${name}, Face image saved: ${req.file.filename}`);
+                        
+                        // Reload face recognition training data
+                        faceRecognition.reloadTraining().then(() => {
+                            console.log('Face recognition training data reloaded');
+                        }).catch(err => {
+                            console.error('Failed to reload training data:', err);
+                        });
+                        
                         return res.send("User created successfully");
                     }
                 );
             } else {
+                // Delete uploaded image if user already exists
+                if (req.file && req.file.path) {
+                    fs.unlinkSync(req.file.path);
+                }
                 return res.send("User Already Exists");
             }
         });

@@ -1,16 +1,485 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIGNUP</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - Attendance System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      background-color: #f8f5f4;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      width: 90%;
+      max-width: 900px;
+      min-height: 80vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      animation: fadeIn 1s ease;
+    }
+
+    .left {
+      flex: 1;
+      background-color: #fdfaf8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      padding: 30px;
+      animation: slideUp 1.2s ease;
+    }
+
+    .signup-form {
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .signup-form h2 {
+      margin-bottom: 20px;
+      color: #2f2931;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+
+    .signup-form label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .signup-form input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: none;
+      border-bottom: 2px solid #aaa;
+      border-radius: 8px;
+      background-color: #eaeaea;
+      transition: all 0.3s ease;
+      font-size: 15px;
+    }
+
+    .signup-form input:focus {
+      background-color: #fff;
+      border-color: #5e4bff;
+      outline: none;
+      transform: scale(1.02);
+      box-shadow: 0 0 8px rgba(94, 75, 255, 0.3);
+    }
+
+    .camera-section {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    #video {
+      width: 100%;
+      max-width: 280px;
+      height: 210px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      margin: 10px auto;
+      display: none;
+      background: #000;
+    }
+
+    #canvas {
+      display: none;
+    }
+
+    .camera-controls {
+      margin: 10px 0;
+    }
+
+    .camera-controls button {
+      padding: 8px 16px;
+      margin: 5px;
+      font-size: 14px;
+    }
+
+    #preview {
+      width: 100%;
+      max-width: 280px;
+      height: 210px;
+      border-radius: 10px;
+      margin: 10px auto;
+      display: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .status-message {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .status-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #2f2931;
+      color: #fff;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #4a3e55;
+      transform: scale(1.05);
+    }
+
+    button:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    button.secondary {
+      background-color: #6c757d;
+    }
+
+    button.secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .login-link {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 20px;
+      color: #444;
+      animation: fadeIn 1.5s ease;
+    }
+
+    .login-link a {
+      color: #2979ff;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+
+    .right {
+      flex: 1;
+      background-color: #2f2931;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      animation: slideRight 1.2s ease;
+    }
+
+    .right h1 {
+      font-size: 1.8rem;
+      line-height: 1.4;
+      animation: fadeInUp 1.5s ease;
+    }
+
+    /* ===== Animations ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideRight {
+      from { transform: translateX(30px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ===== Mobile Responsiveness ===== */
+    @media (max-width: 768px) {
+      body {
+        background-color: #2f2931;
+      }
+
+      .container {
+        flex-direction: column-reverse;
+        width: 95%;
+        height: auto;
+        box-shadow: none;
+        background: transparent;
+      }
+
+      .right {
+        background: transparent;
+        padding: 10px 0;
+      }
+
+      .right h1 {
+        font-size: 1.5rem;
+        color: #fff;
+      }
+
+      .left {
+        width: 100%;
+        background-color: #fff;
+        border-radius: 20px 20px 0 0;
+        padding: 40px 20px;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .signup-form button {
+        background-color: #5e4bff;
+      }
+
+      .login-link {
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
 <body>
-     <form action="/signup" method="post">
-        <input type="text" name="name" placeholder="Ayush Sharma">
-        <input type="text" name="email" placeholder="example@jklu.edu.in">
-        <input type="text" name="password" placeholder="Password">
-        <button type="submit">Login</button>
-    </form>
+  <div class="container">
+    <div class="left">
+      <form class="signup-form" id="signupForm" enctype="multipart/form-data">
+        <h2>Create Account</h2>
+        
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+
+        <label for="email">Email</label>
+        <input type="text" id="email" name="email" placeholder="JKLU Email ID" required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Create password" required>
+
+        <div class="camera-section">
+          <label>📸 Capture Your Face</label>
+          <div id="cameraStatus" class="status-message status-info">
+            Click "Start Camera" to capture your face
+          </div>
+          
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas"></canvas>
+          <img id="preview" alt="Face preview">
+          
+          <div class="camera-controls">
+            <button type="button" id="startCameraBtn" onclick="startCamera()">Start Camera</button>
+            <button type="button" id="captureBtn" onclick="captureFace()" style="display: none;">Capture Face</button>
+            <button type="button" class="secondary" id="retakeBtn" onclick="retakeFace()" style="display: none;">Retake</button>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" disabled>Sign Up</button>
+
+        <p class="login-link">
+          Already have an account? <a href="/login">Login here</a>
+        </p>
+      </form>
+    </div>
+
+    <div class="right">
+      <h1>Join Our<br>Attendance System</h1>
+    </div>
+  </div>
+
+  <script>
+    let videoStream = null;
+    let capturedImage = null;
+
+    async function startCamera() {
+      const video = document.getElementById('video');
+      const cameraStatus = document.getElementById('cameraStatus');
+      const startBtn = document.getElementById('startCameraBtn');
+      const captureBtn = document.getElementById('captureBtn');
+      
+      try {
+        cameraStatus.className = 'status-message status-info';
+        cameraStatus.textContent = '📷 Starting camera...';
+        
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user'
+          },
+          audio: false
+        });
+        
+        video.srcObject = stream;
+        videoStream = stream;
+        video.style.display = 'block';
+        
+        startBtn.style.display = 'none';
+        captureBtn.style.display = 'inline-block';
+        
+        cameraStatus.className = 'status-message status-success';
+        cameraStatus.textContent = '✅ Camera ready! Position your face and click "Capture Face"';
+        
+      } catch (error) {
+        console.error('Camera error:', error);
+        cameraStatus.className = 'status-message status-error';
+        cameraStatus.textContent = '❌ Failed to access camera. Please check permissions.';
+      }
+    }
+
+    function captureFace() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const preview = document.getElementById('preview');
+      const cameraStatus = document.getElementById('cameraStatus');
+      const captureBtn = document.getElementById('captureBtn');
+      const retakeBtn = document.getElementById('retakeBtn');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw current video frame to canvas
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert canvas to blob and store
+      canvas.toBlob((blob) => {
+        capturedImage = blob;
+        
+        // Show preview
+        preview.src = canvas.toDataURL('image/jpeg');
+        preview.style.display = 'block';
+        
+        // Hide video and show retake button
+        video.style.display = 'none';
+        captureBtn.style.display = 'none';
+        retakeBtn.style.display = 'inline-block';
+        
+        // Stop camera
+        if (videoStream) {
+          videoStream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Enable submit button
+        submitBtn.disabled = false;
+        
+        cameraStatus.className = 'status-message status-success';
+        cameraStatus.textContent = '✅ Face captured! You can now sign up.';
+        
+      }, 'image/jpeg', 0.95);
+    }
+
+    function retakeFace() {
+      const video = document.getElementById('video');
+      const preview = document.getElementById('preview');
+      const captureBtn = document.getElementById('captureBtn');
+      const retakeBtn = document.getElementById('retakeBtn');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      preview.style.display = 'none';
+      capturedImage = null;
+      retakeBtn.style.display = 'none';
+      submitBtn.disabled = true;
+      
+      // Restart camera
+      startCamera();
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!capturedImage) {
+        alert('Please capture your face before signing up!');
+        return;
+      }
+      
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('faceImage', capturedImage, `${name}.jpg`);
+      
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating Account...';
+      
+      try {
+        const response = await fetch('/signup', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.text();
+        
+        if (response.ok && result.includes('successfully')) {
+          alert('Account created successfully! Redirecting to login...');
+          window.location.href = '/login';
+        } else {
+          alert(result);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign Up';
+        }
+        
+      } catch (error) {
+        console.error('Signup error:', error);
+        alert('Failed to create account. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign Up';
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+    });
+  </script>
 </body>
 </html>
