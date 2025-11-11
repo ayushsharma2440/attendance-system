@@ -423,11 +423,29 @@
             
             const result = await response.json();
             
+            // Check if request was successful
+            if (!response.ok) {
+                // Authorization failed or other error
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step3').classList.add('active');
+                
+                const confirmationDetails = document.getElementById('confirmationDetails');
+                confirmationDetails.className = 'status-message status-error';
+                confirmationDetails.innerHTML = `
+                    <h2 style="margin-bottom: 15px;">❌ ${result.error || 'Authorization Failed'}</h2>
+                    <p>Face Recognition Name: <strong>${name}</strong></p>
+                    <p>Confidence: ${confidence}%</p>
+                    <p style="margin-top: 15px; font-size: 14px;">Please ensure you're logged in with the correct account that matches your face.</p>
+                `;
+                return;
+            }
+            
             // Show success screen
             document.getElementById('step2').classList.remove('active');
             document.getElementById('step3').classList.add('active');
             
             const confirmationDetails = document.getElementById('confirmationDetails');
+            confirmationDetails.className = 'status-message status-success';
             confirmationDetails.innerHTML = `
                 <h2 style="margin-bottom: 15px;">🎉 Attendance Marked!</h2>
                 <p><strong>Name:</strong> ${name}</p>
@@ -438,7 +456,18 @@
             
         } catch (error) {
             console.error('Attendance marking error:', error);
-            alert('Failed to mark attendance. Please try again.');
+            
+            // Show error on frontend
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step3').classList.add('active');
+            
+            const confirmationDetails = document.getElementById('confirmationDetails');
+            confirmationDetails.className = 'status-message status-error';
+            confirmationDetails.innerHTML = `
+                <h2 style="margin-bottom: 15px;">❌ Error</h2>
+                <p>Failed to mark attendance. Please try again.</p>
+                <p style="margin-top: 15px; font-size: 14px;">${error.message}</p>
+            `;
         }
     }
 

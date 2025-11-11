@@ -97,8 +97,18 @@ router.get("/login",(req,res)=>{
 router.post("/login",(req,res)=>{
     const sql = getconnection();
     const {email,password}  = req.body;
+    
+    if (!sql) {
+        console.error('❌ Database connection not available');
+        return res.status(500).send("Database connection error. Please try again.");
+    }
+    
     sql.query(`Select * from USER where email="${email}" AND password="${password}"`,(err,result)=>{
-        if (err) throw err;
+        if (err) {
+            console.error('❌ Login query error:', err);
+            return res.status(500).send("Database error. Please try again.");
+        }
+        
         if (result.length === 0){
             res.send("NO USER exists");
         }

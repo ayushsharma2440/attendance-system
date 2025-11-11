@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const faceRecognition = require('../faceRecognition');
 const { getconnection } = require('../connection');
+const { authenticateToken } = require('../middleware/auth');
 
 // Configure multer for image upload
 const upload = multer({
@@ -21,8 +22,9 @@ const upload = multer({
  * POST /api/mark-attendance-with-face
  * Mark attendance with face verification
  * Expects: multipart/form-data with 'image' field
+ * Requires authentication
  */
-router.post('/mark-attendance-with-face', upload.single('image'), async (req, res) => {
+router.post('/mark-attendance-with-face', authenticateToken, upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({
@@ -36,14 +38,20 @@ router.post('/mark-attendance-with-face', upload.single('image'), async (req, re
 
         if (result.success && result.recognized) {
             const { name, confidence } = result;
-
-            // TODO: Add your database logic here to mark attendance
-            // Example:
-            // await db.query('INSERT INTO attendance (name, timestamp) VALUES (?, NOW())', [name]);
+            const authenticatedUserName = req.user.name;
+            
+            // Verify that face-recognized name matches logged-in user
+            if (name !== authenticatedUserName) {
+                console.log('⚠️ Authorization Failed: Face recognized as', name, 'but logged in as', authenticatedUserName);
+                return res.status(403).json({
+                    success: false,
+                    error: "You're not authorized. Face recognition doesn't match your account."
+                });
+            }
 
             return res.json({
                 success: true,
-                message: `Attendance marked for ${name}`,
+                message: `Face verified for ${name}`,
                 name: name,
                 confidence: confidence,
                 timestamp: new Date()

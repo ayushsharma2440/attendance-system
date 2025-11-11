@@ -34,11 +34,22 @@ apirouter.post("/location", authenticateToken, (req, res) => {
    
    console.log('✓ Using authenticated user:', { userId, authenticatedUserName });
    
-   // Optional: Verify that face recognition name matches logged-in user
+   // Verify that face recognition name matches logged-in user
    if (name && name !== authenticatedUserName) {
-      console.log('⚠️ Warning: Face recognized as', name, 'but logged in as', authenticatedUserName);
-      // You can choose to reject or just log the warning
-      // return res.status(403).json({ success: false, error: 'Face does not match logged-in user' });
+      console.log('⚠️ Authorization Failed: Face recognized as', name, 'but logged in as', authenticatedUserName);
+      return res.status(403).json({ 
+         success: false, 
+         error: "You're not authorized. Face recognition doesn't match your account." 
+      });
+   }
+   
+   // Require name from face recognition
+   if (!name) {
+      console.log('❌ Face recognition name not provided');
+      return res.status(400).json({
+         success: false,
+         error: "Face recognition name is required for attendance"
+      });
    }
 
    const db = getconnection();
