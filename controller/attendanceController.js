@@ -95,15 +95,24 @@ const getAllAttendance = (req, res) => {
     }
 
     const db = getconnection();
-    const query = `
+    const { date } = req.query;
+    
+    let query = `
         SELECT a.*, u.name, u.email, l.latitude, l.longitude 
         FROM attendance a
         JOIN USER u ON a.user_id = u.id
         LEFT JOIN locations l ON a.location_id = l.location_id
-        ORDER BY a.date DESC, a.at_time DESC
     `;
+    
+    const params = [];
+    if (date) {
+        query += ' WHERE a.date = ?';
+        params.push(date);
+    }
+    
+    query += ' ORDER BY a.date DESC, a.at_time DESC';
 
-    db.query(query, (err, results) => {
+    db.query(query, params, (err, results) => {
         if (err) {
             console.error('Error fetching all attendance:', err);
             return res.status(500).json({ error: 'Error fetching attendance records' });
@@ -112,8 +121,54 @@ const getAllAttendance = (req, res) => {
     });
 };
 
+// Get attendance statistics (admin only)
+const getAttendanceStats = (req, res) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const db = getconnection();
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get total students (excluding admins)
+    const totalStudentsQuery = "SELECT COUNT(*) as count FROM USER WHERE role != 'admin'";
+    
+    // Get present today
+    const presentTodayQuery = `
+        SELECT COUNT(DISTINCT user_id) as count 
+        FROM attendance 
+        WHERE date = ?
+    `;
+    
+    db.query(totalStudentsQuery, (err, totalResult) => {
+        if (err) {
+            console.error('Error fetching total students:', err);
+            return res.status(500).json({ error: 'Error fetching statistics' });
+        }
+        
+        const totalStudents = totalResult[0].count;
+        
+        db.query(presentTodayQuery, [today], (err, presentResult) => {
+            if (err) {
+                console.error('Error fetching present today:', err);
+                return res.status(500).json({ error: 'Error fetching statistics' });
+            }
+            
+            const presentToday = presentResult[0].count;
+            const absentToday = totalStudents - presentToday;
+            
+            res.json({
+                totalStudents,
+                presentToday,
+                absentToday
+            });
+        });
+    });
+};
+
 module.exports = {
     markAttendance,
     getMyAttendance,
-    getAllAttendance
+    getAllAttendance,
+    getAttendanceStats
 };

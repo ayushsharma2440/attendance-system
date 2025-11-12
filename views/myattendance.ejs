@@ -6,20 +6,28 @@
     <title>My Attendance</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .attendance-card {
+        .attendance-row {
             transition: all 0.3s ease;
         }
-        .attendance-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        .attendance-row:hover {
+            background-color: #f9fafb;
         }
-        .present {
-            border-left: 4px solid #10B981;
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
-        .absent {
-            border-left: 4px solid #EF4444;
+        th {
+            background-color: #f3f4f6;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
         }
     </style>
 </head>
@@ -27,8 +35,18 @@
     <!-- Header -->
     <header class="bg-white shadow-sm">
         <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-900">My Attendance</h1>
             <div class="flex items-center space-x-4">
+                <a href="/" class="inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                    <span style="margin-right: 0.5rem;">←</span>
+                    <span>Back</span>
+                </a>
+                <h1 class="text-2xl font-bold text-gray-900">My Attendance</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/markattendance" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-calendar-check" style="margin-right: 0.5rem;"></i>
+                    <span>Mark Attendance</span>
+                </a>
                 <span class="text-gray-600">Welcome, <span id="userName">User</span></span>
                 <button onclick="logout()" class="text-red-600 hover:text-red-800">
                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -39,8 +57,8 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Stats Card -->
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8" style="max-width: 300px;">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
@@ -52,48 +70,28 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
-                        <i class="fas fa-calendar-times text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Total Absent</p>
-                        <p class="text-2xl font-semibold text-gray-900" id="totalAbsent">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                        <i class="fas fa-percentage text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Attendance %</p>
-                        <p class="text-2xl font-semibold text-gray-900" id="attendancePercentage">0%</p>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- Attendance Chart -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Attendance Overview</h2>
-            <div class="h-64">
-                <canvas id="attendanceChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Recent Activity -->
+        <!-- Attendance Records Table -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">Recent Activity</h2>
+                <h2 class="text-lg font-medium text-gray-900">Attendance Records</h2>
             </div>
-            <div class="divide-y divide-gray-200">
-                <!-- Attendance records will be inserted here by JavaScript -->
-                <div id="attendanceRecords" class="divide-y divide-gray-200">
-                    <!-- Records will be loaded here -->
-                </div>
+            <div class="overflow-x-auto">
+                <table id="attendanceTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceRecords">
+                        <!-- Records will be loaded here -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
@@ -132,9 +130,10 @@
                 }
                 
                 const attendanceData = await attendanceResponse.json();
+                console.log('Attendance data received:', attendanceData);
+                console.log('Number of records:', attendanceData.length);
                 updateAttendanceStats(attendanceData);
                 renderAttendanceRecords(attendanceData);
-                renderAttendanceChart(attendanceData);
                 
             } catch (error) {
                 console.error('Error:', error);
@@ -144,107 +143,73 @@
 
         function updateAttendanceStats(records) {
             const presentCount = records.length;
-            const totalDays = 30; // Assuming a month period
-            const absentCount = totalDays - presentCount;
-            const attendancePercentage = Math.round((presentCount / totalDays) * 100);
-
             document.getElementById('totalPresent').textContent = presentCount;
-            document.getElementById('totalAbsent').textContent = absentCount;
-            document.getElementById('attendancePercentage').textContent = `${attendancePercentage}%`;
         }
 
         function renderAttendanceRecords(records) {
-            const container = document.getElementById('attendanceRecords');
-            container.innerHTML = ''; // Clear existing content
+            console.log('Rendering attendance records:', records);
+            const tbody = document.getElementById('attendanceRecords');
+            tbody.innerHTML = ''; // Clear existing content
 
             if (records.length === 0) {
-                container.innerHTML = `
-                    <div class="p-6 text-center text-gray-500">
-                        No attendance records found.
-                    </div>
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-gray-500 py-8">
+                            No attendance records found.
+                        </td>
+                    </tr>
                 `;
                 return;
             }
 
-            records.forEach(record => {
-                const date = new Date(`${record.date}T${record.at_time}`);
-                const formattedDate = date.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                const recordElement = document.createElement('div');
-                recordElement.className = 'p-6 attendance-card flex justify-between items-center hover:bg-gray-50';
-                recordElement.innerHTML = `
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                            <i class="fas fa-calendar-check"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">Attendance Marked</p>
-                            <p class="text-sm text-gray-500">${formattedDate}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <span class="px-3 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-                            Present
-                        </span>
-                        ${record.latitude && record.longitude ? `
-                        <button onclick="showLocation(${record.latitude}, ${record.longitude})" 
-                                class="ml-2 text-blue-600 hover:text-blue-800 text-sm">
-                            <i class="fas fa-map-marker-alt"></i> View Location
-                        </button>
-                        ` : ''}
-                    </div>
-                `;
-                container.appendChild(recordElement);
-            });
-        }
-
-        function renderAttendanceChart(records) {
-            // Group records by date
-            const recordsByDate = {};
-            records.forEach(record => {
-                const date = record.date;
-                if (!recordsByDate[date]) {
-                    recordsByDate[date] = 0;
-                }
-                recordsByDate[date]++;
-            });
-
-            // Prepare data for chart
-            const labels = Object.keys(recordsByDate).sort();
-            const data = labels.map(date => recordsByDate[date]);
-
-            // Create chart
-            const ctx = document.getElementById('attendanceChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Attendance',
-                        data: data,
-                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
+            records.forEach((record, index) => {
+                console.log(`Processing record ${index}:`, record);
+                
+                let formattedDate = 'N/A';
+                let formattedTime = 'N/A';
+                
+                try {
+                    if (record.date) {
+                        // Parse the date (could be ISO format like "2025-11-09T18:30:00.000Z" or just "2025-11-09")
+                        const dateObj = new Date(record.date);
+                        formattedDate = dateObj.toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric'
+                        });
                     }
+                    
+                    if (record.at_time) {
+                        // at_time is in format "19:02:52"
+                        formattedTime = record.at_time;
+                    }
+                } catch (e) {
+                    console.error('Date parsing error:', e);
+                    formattedDate = record.date || 'N/A';
+                    formattedTime = record.at_time || 'N/A';
                 }
+
+                // Convert latitude and longitude to numbers
+                const lat = record.latitude ? parseFloat(record.latitude) : null;
+                const lng = record.longitude ? parseFloat(record.longitude) : null;
+                
+                const row = document.createElement('tr');
+                row.className = 'attendance-row';
+                row.innerHTML = `
+                    <td class="font-medium text-gray-900">${formattedDate}</td>
+                    <td class="text-gray-700">${formattedTime}</td>
+                    <td class="text-gray-700">${lat !== null ? lat.toFixed(6) : 'N/A'}</td>
+                    <td class="text-gray-700">${lng !== null ? lng.toFixed(6) : 'N/A'}</td>
+                    <td>
+                        ${lat !== null && lng !== null ? `
+                        <button onclick="showLocation(${lat}, ${lng})" 
+                                class="px-3 py-1 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition">
+                            <i class="fas fa-map-marker-alt"></i> View on Map
+                        </button>
+                        ` : '<span class="text-gray-400">No location</span>'}
+                    </td>
+                `;
+                tbody.appendChild(row);
             });
         }
 

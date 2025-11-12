@@ -5,6 +5,7 @@ const verifyauth = require("../middleware/middleware");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const faceRecognition = require("../faceRecognition");
 
 // Configure multer for face image uploads
@@ -18,9 +19,9 @@ const storage = multer.diskStorage({
         cb(null, imagesPath);
     },
     filename: function (req, file, cb) {
-        // Use the user's name from the form as filename
-        const userName = req.body.name;
-        cb(null, userName + '.jpg');
+        // Generate random filename using crypto
+        const randomString = crypto.randomBytes(16).toString('hex');
+        cb(null, randomString + '.jpg');
     }
 });
 
@@ -29,7 +30,7 @@ const upload = multer({ storage: storage });
 const router = express.Router();
 
 router.get("/",(req,res)=>{
-    res.send("Homepage");
+    res.render("index");
 })
 
 router.get("/markattendance",verifyauth,(req,res)=>{
@@ -88,6 +89,10 @@ router.get("/admin",verifyauth,(req,res)=>{
     res.render("admin");
 })
 
+router.get("/admin/users",verifyauth,(req,res)=>{
+    res.render("admin-users");
+})
+
 
 
 router.get("/login",(req,res)=>{
@@ -141,7 +146,7 @@ router.get("/signup",(req,res)=>{
 
 router.post("/signup", upload.single('faceImage'), (req, res) => {
     const sql = getconnection();
-    const { name, email, password } = req.body;
+    const { name, email, password, rollNumber, mobileNumber, roomNumber } = req.body;
 
     // Check if face image was uploaded
     if (!req.file) {
@@ -163,9 +168,12 @@ router.post("/signup", upload.single('faceImage'), (req, res) => {
             }
 
             if (userResult.length === 0) {
+                const newUserId = idcount + 1;
+                const imageFilename = req.file.filename;
+                
                 sql.query(
-                    "INSERT INTO User (id, name, email, password) VALUES (?, ?, ?, ?)",
-                    [idcount + 1, name, email, password],
+                    "INSERT INTO User (id, name, email, password, roll_number, mobile_number, room_number) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    [newUserId, name, email, password, rollNumber, mobileNumber, roomNumber],
                     (err) => {
                         if (err) {
                             console.error('Error inserting user:', err);
@@ -175,16 +183,35 @@ router.post("/signup", upload.single('faceImage'), (req, res) => {
                             }
                             return res.status(500).send("Error inserting user");
                         }
-                        console.log(`User created: ${name}, Face image saved: ${req.file.filename}`);
                         
-                        // Reload face recognition training data
-                        faceRecognition.reloadTraining().then(() => {
-                            console.log('Face recognition training data reloaded');
-                        }).catch(err => {
-                            console.error('Failed to reload training data:', err);
-                        });
-                        
-                        return res.send("User created successfully");
+                        // Insert face data into facedata table
+                        sql.query(
+                            "INSERT INTO facedata (user_id, image_filename) VALUES (?, ?)",
+                            [newUserId, imageFilename],
+                            (err) => {
+                                if (err) {
+                                    console.error('Error inserting face data:', err);
+                                    // Delete uploaded image if facedata insertion fails
+                                    if (req.file && req.file.path) {
+                                        fs.unlinkSync(req.file.path);
+                                    }
+                                    // Also delete the user record
+                                    sql.query("DELETE FROM User WHERE id = ?", [newUserId]);
+                                    return res.status(500).send("Error saving face data");
+                                }
+                                
+                                console.log(`User created: ${name} (ID: ${newUserId}), Face image saved: ${imageFilename}`);
+                                
+                                // Reload face recognition training data
+                                faceRecognition.reloadTraining().then(() => {
+                                    console.log('Face recognition training data reloaded');
+                                }).catch(err => {
+                                    console.error('Failed to reload training data:', err);
+                                });
+                                
+                                return res.send("User created successfully");
+                            }
+                        );
                     }
                 );
             } else {

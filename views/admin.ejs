@@ -6,7 +6,6 @@
     <title>Admin Dashboard - Attendance System</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .sidebar {
             transition: all 0.3s;
@@ -47,21 +46,13 @@
                 </div>
             </div>
             <div class="mt-6">
-                <a href="/admin" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
-                    <i class="fas fa-tachometer-alt w-6"></i>
-                    <span class="ml-3 sidebar-text">Dashboard</span>
-                </a>
-                <a href="/admin/attendance" class="flex items-center px-6 py-3 bg-gray-700 text-white">
+                <a href="/admin" class="flex items-center px-6 py-3 bg-gray-700 text-white">
                     <i class="fas fa-clipboard-check w-6"></i>
                     <span class="ml-3 sidebar-text">Attendance</span>
                 </a>
                 <a href="/admin/users" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
                     <i class="fas fa-users w-6"></i>
                     <span class="ml-3 sidebar-text">Users</span>
-                </a>
-                <a href="/admin/reports" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
-                    <i class="fas fa-chart-bar w-6"></i>
-                    <span class="ml-3 sidebar-text">Reports</span>
                 </a>
                 <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700" onclick="logout()">
                     <i class="fas fa-sign-out-alt w-6"></i>
@@ -74,16 +65,35 @@
     <!-- Main Content -->
     <div class="content ml-64 p-8">
         <!-- Header -->
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold text-gray-800">Attendance Overview</h1>
-            <div class="flex items-center space-x-4">
-                <div class="relative">
-                    <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">Attendance Overview</h1>
+            
+            <!-- Filters -->
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
+                        <input type="date" id="filterDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All</option>
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-end gap-2">
+                        <button id="applyFilters" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <i class="fas fa-filter mr-2"></i>Apply Filters
+                        </button>
+                        <button id="clearFilters" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300 focus:outline-none">
+                            <i class="fas fa-times mr-2"></i>Clear
+                        </button>
+                    </div>
                 </div>
-                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <i class="fas fa-download mr-2"></i>Export
-                </button>
             </div>
         </div>
 
@@ -124,20 +134,6 @@
             </div>
         </div>
 
-        <!-- Attendance Chart -->
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-medium text-gray-900">Monthly Attendance Overview</h2>
-                <div class="flex space-x-2">
-                    <button class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">This Month</button>
-                    <button class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">Last Month</button>
-                    <button class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Custom</button>
-                </div>
-            </div>
-            <div class="h-80">
-                <canvas id="attendanceChart"></canvas>
-            </div>
-        </div>
 
         <!-- Recent Activity -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -218,6 +214,9 @@
             document.querySelector('.content').classList.toggle('expanded');
         });
 
+        let allUsers = [];
+        let allAttendanceRecords = [];
+
         // Fetch admin data and statistics
         document.addEventListener('DOMContentLoaded', async () => {
             try {
@@ -237,7 +236,45 @@
                 const userData = await userResponse.json();
                 document.getElementById('adminName').textContent = userData.name;
 
-                // Fetch attendance statistics (cookies are automatically sent)
+                // Set today's date as default
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('filterDate').value = today;
+
+                // Fetch all users for absent tracking
+                const usersResponse = await fetch('/api/users/all', {
+                    credentials: 'include'
+                });
+                if (usersResponse.ok) {
+                    allUsers = await usersResponse.json();
+                }
+
+                // Load initial data
+                await loadAttendanceData();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading dashboard data. Please try again.');
+            }
+        });
+
+        // Apply filters button
+        document.getElementById('applyFilters').addEventListener('click', async () => {
+            await loadAttendanceData();
+        });
+
+        // Clear filters button
+        document.getElementById('clearFilters').addEventListener('click', () => {
+            document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('filterStatus').value = 'all';
+            loadAttendanceData();
+        });
+
+        async function loadAttendanceData() {
+            try {
+                const filterDate = document.getElementById('filterDate').value;
+                const filterStatus = document.getElementById('filterStatus').value;
+
+                // Fetch attendance statistics
                 const statsResponse = await fetch('/api/attendance/stats', {
                     credentials: 'include'
                 });
@@ -247,24 +284,36 @@
                     updateStats(stats);
                 }
 
-                // Fetch recent attendance (cookies are automatically sent)
-                const attendanceResponse = await fetch('/api/attendance/recent', {
+                // Fetch attendance for selected date
+                let url = '/api/attendance/all';
+                if (filterDate) {
+                    url += `?date=${filterDate}`;
+                }
+                
+                const attendanceResponse = await fetch(url, {
                     credentials: 'include'
                 });
                 
                 if (attendanceResponse.ok) {
-                    const attendanceData = await attendanceResponse.json();
-                    renderRecentAttendance(attendanceData);
+                    allAttendanceRecords = await attendanceResponse.json();
+                    
+                    // Filter by status if needed
+                    let filteredRecords = allAttendanceRecords;
+                    
+                    if (filterStatus === 'present') {
+                        renderPresentAttendance(filteredRecords);
+                    } else if (filterStatus === 'absent') {
+                        renderAbsentUsers(filteredRecords, filterDate);
+                    } else {
+                        renderAllAttendance(filteredRecords, filterDate);
+                    }
                 }
-                
-                // Initialize chart
-                initializeChart();
                 
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error loading dashboard data. Please try again.');
+                alert('Error loading attendance data. Please try again.');
             }
-        });
+        }
 
         function updateStats(stats) {
             document.getElementById('totalStudents').textContent = stats.totalStudents || 0;
@@ -272,15 +321,15 @@
             document.getElementById('absentToday').textContent = stats.absentToday || 0;
         }
 
-        function renderRecentAttendance(records) {
+        function renderPresentAttendance(records) {
             const container = document.getElementById('recentAttendance');
-            container.innerHTML = ''; // Clear existing content
+            container.innerHTML = '';
 
             if (!records || records.length === 0) {
                 container.innerHTML = `
                     <tr>
                         <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                            No recent attendance records found.
+                            No attendance records found.
                         </td>
                     </tr>
                 `;
@@ -288,109 +337,159 @@
             }
 
             records.forEach(record => {
-                const date = new Date(`${record.date}T${record.time || '00:00:00'}`);
-                const formattedDate = date.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric'
-                });
-                
-                const formattedTime = date.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10">
-                                <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                    <i class="fas fa-user text-gray-500"></i>
-                                </div>
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">${record.name}</div>
-                                <div class="text-sm text-gray-500">${record.email || ''}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${formattedDate}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${formattedTime}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Present
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${record.latitude && record.longitude ? 
-                            `<button onclick="showLocation(${record.latitude}, ${record.longitude})" 
-                                    class="text-blue-600 hover:text-blue-800">
-                                <i class="fas fa-map-marker-alt"></i> View
-                            </button>` : 
-                            '<span class="text-gray-400">N/A</span>'
-                        }
-                    </td>
-                `;
+                const row = createAttendanceRow(record, 'Present');
                 container.appendChild(row);
             });
         }
 
-        function initializeChart() {
-            const ctx = document.getElementById('attendanceChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [
-                        {
-                            label: 'Present',
-                            data: [65, 59, 80, 81, 56, 55, 40, 45, 60, 70, 75, 80],
-                            borderColor: 'rgba(59, 130, 246, 1)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.05)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Absent',
-                            data: [35, 41, 20, 19, 44, 45, 60, 55, 40, 30, 25, 20],
-                            borderColor: 'rgba(239, 68, 68, 1)',
-                            backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 10
-                            }
-                        }
-                    }
-                }
+        function renderAbsentUsers(presentRecords, date) {
+            const container = document.getElementById('recentAttendance');
+            container.innerHTML = '';
+
+            // Get user IDs who were present
+            const presentUserIds = new Set(presentRecords.map(r => r.user_id));
+            
+            // Filter users who were absent
+            const absentUsers = allUsers.filter(user => !presentUserIds.has(user.id) && user.role !== 'admin');
+
+            if (absentUsers.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                            No absent users found.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            absentUsers.forEach(user => {
+                const row = createAbsentRow(user, date);
+                container.appendChild(row);
             });
         }
+
+        function renderAllAttendance(presentRecords, date) {
+            const container = document.getElementById('recentAttendance');
+            container.innerHTML = '';
+
+            // Show present users
+            presentRecords.forEach(record => {
+                const row = createAttendanceRow(record, 'Present');
+                container.appendChild(row);
+            });
+
+            // Show absent users
+            const presentUserIds = new Set(presentRecords.map(r => r.user_id));
+            const absentUsers = allUsers.filter(user => !presentUserIds.has(user.id) && user.role !== 'admin');
+            
+            absentUsers.forEach(user => {
+                const row = createAbsentRow(user, date);
+                container.appendChild(row);
+            });
+
+            if (presentRecords.length === 0 && absentUsers.length === 0) {
+                container.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                            No records found.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function createAttendanceRow(record, status) {
+            const date = new Date(record.date);
+            const formattedDate = date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric'
+            });
+            
+            const formattedTime = record.at_time || 'N/A';
+
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                            <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-500"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">${record.name}</div>
+                            <div class="text-sm text-gray-500">${record.email || ''}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${formattedDate}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${formattedTime}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        ${status}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${record.latitude && record.longitude ? 
+                        `<button onclick="showLocation(${record.latitude}, ${record.longitude})" 
+                                class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-map-marker-alt"></i> View
+                        </button>` : 
+                        '<span class="text-gray-400">N/A</span>'
+                    }
+                </td>
+            `;
+            return row;
+        }
+
+        function createAbsentRow(user, date) {
+            const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric'
+            });
+
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                            <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-500"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">${user.name}</div>
+                            <div class="text-sm text-gray-500">${user.email || ''}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ${formattedDate}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    -
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        Absent
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span class="text-gray-400">N/A</span>
+                </td>
+            `;
+            return row;
+        }
+
 
         function showLocation(lat, lng) {
             window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');

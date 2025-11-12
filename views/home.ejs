@@ -151,6 +151,12 @@
 </head>
 <body>
     <div class="container">
+        <div style="margin-bottom: 1rem;">
+            <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background-color: #6c757d; color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: all 0.3s ease;">
+                <span>←</span>
+                <span>Back to Home</span>
+            </a>
+        </div>
         <h1>🎯 Attendance System</h1>
 
         <!-- Step 1: Location & Button -->
@@ -434,7 +440,6 @@
                 confirmationDetails.innerHTML = `
                     <h2 style="margin-bottom: 15px;">❌ ${result.error || 'Authorization Failed'}</h2>
                     <p>Face Recognition Name: <strong>${name}</strong></p>
-                    <p>Confidence: ${confidence}%</p>
                     <p style="margin-top: 15px; font-size: 14px;">Please ensure you're logged in with the correct account that matches your face.</p>
                 `;
                 return;
@@ -449,7 +454,6 @@
             confirmationDetails.innerHTML = `
                 <h2 style="margin-bottom: 15px;">🎉 Attendance Marked!</h2>
                 <p><strong>Name:</strong> ${name}</p>
-                <p><strong>Confidence:</strong> ${confidence}%</p>
                 <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
                 <p><strong>Location:</strong> ${userCoordinates.lat.toFixed(6)}, ${userCoordinates.lon.toFixed(6)}</p>
             `;

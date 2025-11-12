@@ -2,6 +2,7 @@ const faceapi = require('face-api.js');
 const canvas = require('canvas');
 const fs = require('fs');
 const path = require('path');
+const { getconnection } = require('./connection');
 
 // Setup canvas for face-api.js
 const { Canvas, Image, ImageData } = canvas;
@@ -37,6 +38,7 @@ async function loadModels() {
 
 /**
  * Load and train on reference images from Images folder
+ * Maps random filenames to user names using facedata table
  */
 async function loadReferenceImages() {
     try {
@@ -45,6 +47,28 @@ async function loadReferenceImages() {
             console.log(`[INFO] Created '${IMAGES_PATH}' directory`);
             return [];
         }
+        
+        // Get filename to username mapping from database
+        const db = getconnection();
+        const filenameToNameMap = await new Promise((resolve, reject) => {
+            const query = `
+                SELECT f.image_filename, u.name 
+                FROM facedata f
+                JOIN USER u ON f.user_id = u.id
+            `;
+            db.query(query, (err, results) => {
+                if (err) {
+                    console.error('[ERROR] Failed to query facedata:', err);
+                    resolve({});
+                } else {
+                    const map = {};
+                    results.forEach(row => {
+                        map[row.image_filename] = row.name;
+                    });
+                    resolve(map);
+                }
+            });
+        });
         
         const files = fs.readdirSync(IMAGES_PATH)
             .filter(file => /\.(jpg|jpeg|png)$/i.test(file));
@@ -58,7 +82,8 @@ async function loadReferenceImages() {
         const labeledDescriptors = [];
         
         for (const file of files) {
-            const name = path.parse(file).name;
+            // Get the user name from database mapping, fallback to filename if not found
+            const name = filenameToNameMap[file] || path.parse(file).name;
             const imgPath = path.join(IMAGES_PATH, file);
             
             try {

@@ -12,6 +12,9 @@ const createtable = (sql)=>{
       name VARCHAR(50) NOT NULL,
       email VARCHAR(100),
       password VARCHAR(50),
+      roll_number VARCHAR(50),
+      mobile_number VARCHAR(15),
+      room_number VARCHAR(50),
       has_attended BOOLEAN DEFAULT FALSE,
       role ENUM('admin', 'student') DEFAULT 'student'
     )
@@ -45,6 +48,20 @@ const createtable = (sql)=>{
   `, (err) => {
     if (err) throw err;
     console.log("Table attendance created");
+  });
+
+  sql.query(`
+    CREATE TABLE IF NOT EXISTS facedata (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      image_filename VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES USER(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_user_face (user_id)
+    )
+  `, (err) => {
+    if (err) throw err;
+    console.log("Table facedata created");
   });
 
 };

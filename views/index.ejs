@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System - Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f5f4;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #fff;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin: 2rem auto;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.6s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        h1 {
+            text-align: center;
+            color: #2f2931;
+            margin-bottom: 1rem;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2.5rem;
+            font-size: 1em;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            background-color: #2f2931;
+            color: white;
+        }
+        .btn:hover {
+            background-color: #4a3e55;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .icon {
+            font-size: 1.5rem;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer a {
+            color: #2f2931;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .footer a:hover {
+            color: #4a3e55;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Attendance System</h1>
+        <p class="subtitle">Welcome! Please select an option below</p>
+        
+        <div class="button-container">
+            <a href="/markattendance" class="btn">
+                <span class="icon">📝</span>
+                <span>Mark Attendance</span>
+            </a>
+            
+            <a href="/myattendance" class="btn">
+                <span class="icon">📊</span>
+                <span>View My Attendance</span>
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>Not logged in? <a href="/login">Login here</a></p>
+            <p style="margin-top: 0.5rem;">Don't have an account? <a href="/signup">Sign up here</a></p>
+        </div>
+    </div>
+</body>
+</html>

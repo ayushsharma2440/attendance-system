@@ -297,6 +297,15 @@
         <label for="password">Password</label>
         <input type="password" id="password" name="password" placeholder="Create password" required>
 
+        <label for="rollNumber">Roll Number</label>
+        <input type="text" id="rollNumber" name="rollNumber" placeholder="Enter roll number" required>
+
+        <label for="mobileNumber">Mobile Number</label>
+        <input type="tel" id="mobileNumber" name="mobileNumber" placeholder="Enter mobile number" required pattern="[0-9]{10}" maxlength="10">
+
+        <label for="roomNumber">Room Number</label>
+        <input type="text" id="roomNumber" name="roomNumber" placeholder="Enter room number" required>
+
         <div class="camera-section">
           <label>📸 Capture Your Face</label>
           <div id="cameraStatus" class="status-message status-info">
@@ -438,11 +447,17 @@
       const name = document.getElementById('name').value;
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
+      const rollNumber = document.getElementById('rollNumber').value;
+      const mobileNumber = document.getElementById('mobileNumber').value;
+      const roomNumber = document.getElementById('roomNumber').value;
       
       const formData = new FormData();
       formData.append('name', name);
       formData.append('email', email);
       formData.append('password', password);
+      formData.append('rollNumber', rollNumber);
+      formData.append('mobileNumber', mobileNumber);
+      formData.append('roomNumber', roomNumber);
       formData.append('faceImage', capturedImage, `${name}.jpg`);
       
       const submitBtn = document.getElementById('submitBtn');

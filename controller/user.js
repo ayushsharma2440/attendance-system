@@ -131,4 +131,21 @@ apirouter.post("/location", authenticateToken, (req, res) => {
       });
    });
 
+// Get all users (admin only)
+apirouter.get('/users/all', authenticateToken, (req, res) => {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const sql = getconnection();
+    sql.query('SELECT id, name, email, role, roll_number, mobile_number, room_number FROM USER ORDER BY name', (err, results) => {
+        if (err) {
+            console.error('Error fetching users:', err);
+            return res.status(500).json({ error: 'Error fetching users' });
+        }
+        res.json(results);
+    });
+});
+
 module.exports = apirouter;

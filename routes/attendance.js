@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { markAttendance, getMyAttendance, getAllAttendance } = require('../controller/attendanceController');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
+const { markAttendance, getMyAttendance, getAllAttendance, getAttendanceStats } = require('../controller/attendanceController');
 const { getconnection } = require('../connection');
 
 // Mark attendance (authenticated users)

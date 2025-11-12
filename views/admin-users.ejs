@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .sidebar {
+            transition: all 0.3s;
+        }
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        .content {
+            transition: all 0.3s;
+        }
+        .content.expanded {
+            margin-left: 70px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Sidebar -->
+    <div class="sidebar bg-gray-800 text-white h-screen fixed left-0 top-0 w-64 overflow-y-auto">
+        <div class="p-4 flex items-center justify-between border-b border-gray-700">
+            <h1 class="text-xl font-bold sidebar-text">Admin Panel</h1>
+            <button id="toggleSidebar" class="text-gray-400 hover:text-white focus:outline-none">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="mt-6">
+            <div class="px-4 py-3 bg-gray-700">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div class="ml-3 sidebar-text">
+                        <p class="text-sm font-medium" id="adminName">Admin</p>
+                        <p class="text-xs text-gray-300">Administrator</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6">
+                <a href="/admin" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+                    <i class="fas fa-clipboard-check w-6"></i>
+                    <span class="ml-3 sidebar-text">Attendance</span>
+                </a>
+                <a href="/admin/users" class="flex items-center px-6 py-3 bg-gray-700 text-white">
+                    <i class="fas fa-users w-6"></i>
+                    <span class="ml-3 sidebar-text">Users</span>
+                </a>
+                <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700" onclick="logout()">
+                    <i class="fas fa-sign-out-alt w-6"></i>
+                    <span class="ml-3 sidebar-text">Logout</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content ml-64 p-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">User Management</h1>
+            <p class="text-gray-600">All registered students in the system</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                        <i class="fas fa-users text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Total Students</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="totalUsers">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                        <i class="fas fa-user-check text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Active Today</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="activeUsers">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                        <i class="fas fa-user-plus text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">New This Month</p>
+                        <p class="text-2xl font-semibold text-gray-900" id="newUsers">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex-1 min-w-[250px]">
+                    <input type="text" id="searchInput" placeholder="Search by name, email, roll number..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button id="searchBtn" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                    <i class="fas fa-search mr-2"></i>Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Name
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Email
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Roll Number
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Mobile Number
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Room Number
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Role
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- User rows will be loaded here -->
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Loading users...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle sidebar
+        document.getElementById('toggleSidebar').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('collapsed');
+            document.querySelector('.content').classList.toggle('expanded');
+        });
+
+        let allUsers = [];
+
+        // Fetch users on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Fetch admin data
+                const userResponse = await fetch('/api/auth/me', {
+                    credentials: 'include'
+                });
+                
+                if (!userResponse.ok) {
+                    if (userResponse.status === 401 || userResponse.status === 403) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    throw new Error('Failed to fetch admin data');
+                }
+                
+                const userData = await userResponse.json();
+                document.getElementById('adminName').textContent = userData.name;
+
+                // Fetch all users
+                const usersResponse = await fetch('/api/users/all', {
+                    credentials: 'include'
+                });
+                
+                if (usersResponse.ok) {
+                    allUsers = await usersResponse.json();
+                    renderUsers(allUsers);
+                    updateStats(allUsers);
+                } else {
+                    throw new Error('Failed to fetch users');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('usersGrid').innerHTML = `
+                    <div class="col-span-full text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-circle text-3xl mb-2"></i>
+                        <p>Error loading users. Please try again.</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Search functionality
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filteredUsers = allUsers.filter(user => 
+                user.name.toLowerCase().includes(searchTerm) ||
+                (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                (user.roll_number && user.roll_number.toLowerCase().includes(searchTerm))
+            );
+            renderUsers(filteredUsers);
+        });
+
+        // Real-time search
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredUsers = allUsers.filter(user => 
+                user.name.toLowerCase().includes(searchTerm) ||
+                (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                (user.roll_number && user.roll_number.toLowerCase().includes(searchTerm))
+            );
+            renderUsers(filteredUsers);
+        });
+
+        function updateStats(users) {
+            const students = users.filter(u => u.role !== 'admin');
+            document.getElementById('totalUsers').textContent = students.length;
+            document.getElementById('activeUsers').textContent = '0'; // Placeholder
+            document.getElementById('newUsers').textContent = '0'; // Placeholder
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            const students = users.filter(user => user.role !== 'admin');
+
+            if (students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-users text-3xl mb-2"></i>
+                            <p>No users found.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            students.forEach((user, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${user.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${user.email || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${user.roll_number || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${user.mobile_number || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${user.room_number || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
+                        }">
+                            ${user.role || 'Student'}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>
