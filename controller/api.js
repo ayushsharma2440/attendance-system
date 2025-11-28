@@ -45,7 +45,6 @@ router.get("/face",(req,res)=>{
     res.render("face-attendance-example");
 })
 
-// Temporary route to clear cookies - remove this after testing
 router.get("/clear-cookies",(req,res)=>{
     res.clearCookie("jwt");
     res.send("Cookies cleared! Please <a href='/login'>login again</a>");

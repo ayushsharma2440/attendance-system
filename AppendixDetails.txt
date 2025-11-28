@@ -1,0 +1,162 @@
+9. Appendices
+
+Appendix A: Complete SQL Code
+--------------------------------
+-- Run these statements in a MySQL 8.x session.
+-- Update the root password or host if your environment differs.
+
+CREATE DATABASE IF NOT EXISTS attendance_db;
+USE attendance_db;
+
+CREATE TABLE IF NOT EXISTS USER (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL,
+  email VARCHAR(100) UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  roll_number VARCHAR(50),
+  mobile_number VARCHAR(15),
+  room_number VARCHAR(50),
+  has_attended BOOLEAN DEFAULT FALSE,
+  role ENUM('admin', 'student') DEFAULT 'student',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS locations (
+  location_id INT AUTO_INCREMENT PRIMARY KEY,
+  latitude DECIMAL(10,7),
+  longitude DECIMAL(10,7),
+  at_time DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS attendance (
+  attendance_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  date DATE NOT NULL,
+  at_time TIME,
+  location_id INT,
+  CONSTRAINT fk_attendance_user FOREIGN KEY (user_id)
+    REFERENCES USER(id) ON DELETE CASCADE,
+  CONSTRAINT fk_attendance_location FOREIGN KEY (location_id)
+    REFERENCES locations(location_id) ON DELETE SET NULL,
+  UNIQUE KEY uniq_user_day (user_id, date)
+);
+
+CREATE TABLE IF NOT EXISTS facedata (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  image_filename VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_face_user FOREIGN KEY (user_id)
+    REFERENCES USER(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_user_face (user_id)
+);
+
+-- Seed an initial admin account (replace placeholders before running)
+INSERT INTO USER (name, email, password, role)
+VALUES ('Admin User', 'admin@example.com', '', 'admin')
+ON DUPLICATE KEY UPDATE email = VALUES(email);
+
+-- Optional helper indexes for faster lookups
+CREATE INDEX idx_attendance_date ON attendance(date);
+CREATE INDEX idx_locations_time ON locations(at_time);
+
+
+Appendix B: User Manual / Instructions
+--------------------------------------
+Purpose
+- Secure face-recognition driven attendance with geolocation validation.
+
+Prerequisites
+- Modern browser (Chrome/Edge) with HTTPS, camera, and GPS permissions enabled.
+- Stable internet connection to reach http://localhost:8000/ (or your deployed host).
+- Student account created by an admin or via the public signup form.
+
+Account Setup
+1. Navigate to /signup, enter full name, institute email, roll no., room, and create a password.
+2. Upload a clear face image when prompted so the system can build your embedding.
+3. Check your inbox for the confirmation email if SMTP is configured; otherwise, the account becomes active immediately.
+4. Login through /login and keep the browser tab active; an HTTP-only JWT cookie is issued.
+
+Marking Attendance (Students)
+1. Browse to /home and allow the site to read your location; a Leaflet map confirms the captured coordinates.
+2. Click Verify Physical Presence; the webcam view opens with instructions.
+3. Stay in good lighting, center your face, and wait for the automatic scan (runs every 2 seconds).
+4. Once recognized, the backend stores GPS, timestamp, and attendance record. A success card shows the coordinates and time.
+5. Visit /myattendance anytime to review your history; entries include status, date, and map links when a location was saved.
+
+Admin Workflow
+1. Login using an admin account; you are redirected to /admin.
+2. Dashboard cards summarize total students, present, and absent counts (queried through /api/attendance/stats).
+3. Use the date picker and status filter to focus on a specific day or show only absent users.
+4. Users tab (/admin/users) lists every profile with role toggles and presence flags sourced from USER.has_attended.
+5. Click View in the Location column to open a Google Maps tab for any recorded coordinates.
+6. Export data by calling the REST endpoints directly (e.g., /api/attendance/all?date=YYYY-MM-DD).
+
+Troubleshooting
+- Location denied: refresh the page, allow GPS, or manually enable it from browser settings.
+- Camera blocked: use the browser address bar lock icon to grant camera access, then reload.
+- Face not recognized: ensure your enrollment photo is recent; admins can re-upload via the Users tab.
+- Unauthorized errors: login again so the JWT cookie refreshes; admins should confirm their role in the database.
+- Database sync: rerun the SQL script above after backup whenever you migrate servers.
+
+Support & Maintenance
+- Configuration lives in .env/connection.js (host, password, JWT secret). Rotate secrets periodically.
+- Run npm install followed by node index.js (or pm2 start index.js) after pulling code updates.
+- Back up attendance, locations, USER, and facedata tables nightly for compliance.
+
+
+Admin-Side SQL Queries
+----------------------
+-- Daily totals (used by /api/attendance/stats)
+SELECT COUNT(*) AS total_students
+FROM USER
+WHERE role = 'student';
+
+SELECT COUNT(DISTINCT user_id) AS present_today
+FROM attendance
+WHERE date = CURDATE();
+
+-- Combined present/absent snapshot for a given day
+SELECT u.id,
+       u.name,
+       IF(a.attendance_id IS NULL, 'Absent', 'Present') AS status,
+       a.date,
+       a.at_time,
+       l.latitude,
+       l.longitude
+FROM USER u
+LEFT JOIN attendance a
+       ON u.id = a.user_id
+      AND a.date = @target_date
+LEFT JOIN locations l
+       ON a.location_id = l.location_id
+WHERE u.role = 'student'
+ORDER BY status DESC, u.name;
+
+-- Recent attendance feed for dashboard tables
+SELECT a.attendance_id,
+       a.user_id,
+       u.name,
+       u.email,
+       a.date,
+       a.at_time,
+       l.latitude,
+       l.longitude
+FROM attendance a
+JOIN USER u ON a.user_id = u.id
+LEFT JOIN locations l ON a.location_id = l.location_id
+ORDER BY a.date DESC, a.at_time DESC
+LIMIT 50;
+
+-- Admin login helper: list all admins with latest activity
+SELECT u.id,
+       u.name,
+       u.email,
+       MAX(a.date) AS last_marked_date,
+       MAX(a.at_time) AS last_marked_time
+FROM USER u
+LEFT JOIN attendance a ON u.id = a.user_id
+WHERE u.role = 'admin'
+GROUP BY u.id, u.name, u.email
+ORDER BY last_marked_date DESC;
+

@@ -7,6 +7,7 @@ const createtable = (sql)=>{
 
 
   sql.query(`
+    
     CREATE TABLE IF NOT EXISTS USER (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(50) NOT NULL,
